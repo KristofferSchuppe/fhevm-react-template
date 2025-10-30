@@ -1,0 +1,33 @@
+{
+  "name": "nodejs-fhevm-template",
+  "version": "1.0.0",
+  "description": "Node.js template with FHEVM SDK integration",
+  "type": "module",
+  "main": "dist/index.js",
+  "scripts": {
+    "dev": "tsx src/index.ts",
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "example:basic": "tsx examples/basic.ts",
+    "example:encrypt": "tsx examples/encryption.ts",
+    "example:contract": "tsx examples/contract-interaction.ts"
+  },
+  "keywords": [
+    "fhevm",
+    "fhe",
+    "encryption",
+    "nodejs"
+  ],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "@fhevm-toolkit/sdk": "^1.0.0",
+    "ethers": "^6.9.0",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "tsx": "^4.7.0"
+  }
+}

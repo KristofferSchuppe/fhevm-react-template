@@ -9,7 +9,8 @@
 ### 1. Review Documentation (2 minutes)
 
 ```bash
-cd D:\zamadapp\dapp156\fhevm-react-template
+# Navigate to repository directory
+cd fhevm-react-template
 
 # Read main README
 cat README.md
@@ -63,8 +64,8 @@ cat examples/privacy-evidence-manager/scripts/deploy.js
 ### Installation (< 1 minute)
 
 ```bash
-# Clone repository
-cd D:\zamadapp\dapp156\fhevm-react-template
+# Navigate to repository
+cd fhevm-react-template
 
 # Install all dependencies
 npm install

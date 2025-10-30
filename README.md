@@ -63,7 +63,33 @@ npm install
 npm run build
 ```
 
-### 3. Run Example
+### 3. Use a Template
+
+Choose your preferred framework and get started:
+
+```bash
+# Next.js template
+cd templates/nextjs
+npm install
+npm run dev
+
+# React template
+cd templates/react
+npm install
+npm run dev
+
+# Vue template
+cd templates/vue
+npm install
+npm run dev
+
+# Node.js template
+cd templates/nodejs
+npm install
+npm run dev
+```
+
+### 4. Or Run Examples
 
 ```bash
 # Next.js example
@@ -73,7 +99,7 @@ npm run dev:nextjs
 npm run dev:evidence
 ```
 
-### 4. Use in Your App
+### 5. Use in Your App
 
 ```javascript
 import { FhevmClient } from '@fhevm-toolkit/sdk';
@@ -105,16 +131,51 @@ fhevm-toolkit/
 │       ├── dist/                # Built package
 │       └── README.md            # SDK documentation
 │
+├── templates/                   # 🎨 Framework Templates
+│   ├── nextjs/                  # Next.js 14 template
+│   │   ├── src/
+│   │   │   ├── app/             # App Router with API routes
+│   │   │   ├── components/      # UI and FHE components
+│   │   │   ├── lib/             # FHE integration library
+│   │   │   ├── hooks/           # Custom React hooks
+│   │   │   └── types/           # TypeScript types
+│   │   └── README.md
+│   │
+│   ├── react/                   # React + Vite template
+│   │   ├── src/
+│   │   │   ├── components/      # React components
+│   │   │   └── hooks/           # FHE hooks
+│   │   └── README.md
+│   │
+│   ├── vue/                     # Vue 3 template
+│   │   ├── src/
+│   │   │   ├── components/      # Vue components
+│   │   │   └── composables/     # FHE composables
+│   │   └── README.md
+│   │
+│   └── nodejs/                  # Node.js template
+│       ├── src/                 # Main application
+│       ├── examples/            # Usage examples
+│       └── README.md
+│
 ├── examples/
+│   ├── nextjs-fhe-integration/  # 📱 Complete Next.js example
+│   │   ├── src/app/             # Next.js 14 App Router
+│   │   ├── src/components/      # FHE & UI components
+│   │   ├── src/lib/             # FHE integration library
+│   │   ├── src/hooks/           # Custom React hooks
+│   │   └── README.md
+│   │
 │   ├── nextjs-evidence-manager/ # 📱 Next.js + RainbowKit example
 │   │   ├── app/                 # Next.js 14 App Router
 │   │   ├── lib/                 # SDK integration
 │   │   └── README.md
 │   │
-│   └── privacy-evidence-manager/# 📝 Smart Contract Example
+│   └── privacy-evidence-manager/# 📝 Smart Contract + React Example
 │       ├── contracts/           # Solidity contracts
 │       ├── scripts/             # Deploy & interact scripts
 │       ├── test/                # 77 tests (92.45% coverage)
+│       ├── src/                 # React frontend
 │       └── README.md
 │
 ├── docs/                        # 📚 Documentation
@@ -164,7 +225,14 @@ const { encrypt, isEncrypting } = useEncrypt(client);
 
 ## 🌐 Multi-Framework Support
 
-### Next.js Example
+### Next.js Templates
+
+Complete Next.js 14 templates with App Router, API routes, and SDK integration.
+
+**Templates Available**:
+- `templates/nextjs/` - Base Next.js template
+- `examples/nextjs-fhe-integration/` - Full FHE integration example
+- `examples/nextjs-evidence-manager/` - Evidence manager app
 
 ```typescript
 'use client';
@@ -193,10 +261,60 @@ export default function Page() {
 }
 ```
 
-### Node.js Example
+**Features**:
+- ✅ App Router with API routes
+- ✅ FHE Provider & Components
+- ✅ Custom hooks (useFHE, useEncryption, useComputation)
+- ✅ TypeScript & Tailwind CSS
 
-```javascript
-const { FhevmClient } = require('@fhevm-toolkit/sdk');
+### React Template
+
+React 18 + Vite template with SDK integration.
+
+**Location**: `templates/react/`
+
+**Features**:
+- ✅ Vite for fast development
+- ✅ FHE hooks and components
+- ✅ TypeScript support
+- ✅ Modern CSS styling
+
+### Vue Template
+
+Vue 3 Composition API template with SDK integration.
+
+**Location**: `templates/vue/`
+
+```vue
+<script setup lang="ts">
+import { useFHE } from '@/composables/useFHE';
+
+const { client, isInitialized, initializeFHE } = useFHE();
+
+const handleEncrypt = async () => {
+  const result = await client.value.encryptInput({
+    value: 100,
+    type: 'uint64',
+    contractAddress: CONTRACT_ADDRESS
+  });
+};
+</script>
+```
+
+**Features**:
+- ✅ Vue 3 Composition API
+- ✅ FHE composables
+- ✅ TypeScript support
+- ✅ Vite build system
+
+### Node.js Template
+
+Server-side Node.js/TypeScript template with multiple examples.
+
+**Location**: `templates/nodejs/`
+
+```typescript
+import { FhevmClient } from '@fhevm-toolkit/sdk';
 
 async function main() {
   const client = new FhevmClient({ provider, signer, chainId: 11155111 });
@@ -214,39 +332,37 @@ async function main() {
 main();
 ```
 
-### Vue Example
-
-```javascript
-import { ref, onMounted } from 'vue';
-import { FhevmClient } from '@fhevm-toolkit/sdk';
-
-export default {
-  setup() {
-    const client = ref(null);
-
-    onMounted(async () => {
-      client.value = new FhevmClient({ provider, signer, chainId: 11155111 });
-      await client.value.init();
-    });
-
-    const encrypt = async (value) => {
-      return await client.value.encryptInput({
-        value,
-        type: 'uint64',
-        contractAddress: CONTRACT_ADDRESS
-      });
-    };
-
-    return { client, encrypt };
-  }
-};
-```
+**Features**:
+- ✅ TypeScript with tsx
+- ✅ Environment configuration
+- ✅ Multiple usage examples
+- ✅ Production-ready setup
 
 ---
 
 ## 📱 Example Applications
 
-### 1. FHE Evidence Manager (Next.js Example)
+### 1. Next.js FHE Integration (Complete Example)
+
+**Location**: `examples/nextjs-fhe-integration/`
+
+**Features:**
+- ✅ Next.js 14 with App Router
+- ✅ Complete FHE Provider implementation
+- ✅ Encryption/Decryption demos
+- ✅ Homomorphic computation examples
+- ✅ Banking & Medical use cases
+- ✅ Key management interface
+- ✅ TypeScript + Tailwind CSS
+
+**Run:**
+```bash
+cd examples/nextjs-fhe-integration
+npm install
+npm run dev
+```
+
+### 2. FHE Evidence Manager (Next.js Example)
 
 **Location**: `examples/nextjs-evidence-manager/`
 
@@ -265,12 +381,13 @@ npm run dev:nextjs
 
 **Live Demo**: [https://fhe-evidence-manager.vercel.app/](https://fhe-evidence-manager.vercel.app/)
 
-### 2. FHE Evidence Manager Smart Contract
+### 3. Privacy Evidence Manager (Smart Contract + React)
 
 **Location**: `examples/privacy-evidence-manager/`
 
 **Features:**
 - ✅ Hardhat smart contract project
+- ✅ React frontend with Vite
 - ✅ FHEVM SDK integration
 - ✅ 77 tests with 92.45% coverage
 - ✅ Sepolia deployment
@@ -281,9 +398,10 @@ npm run dev:nextjs
 ```bash
 cd examples/privacy-evidence-manager
 npm install
-npm run compile
-npm test
-npm run deploy
+npm run compile       # Compile contracts
+npm test              # Run tests
+npm run frontend      # Run React frontend
+npm run deploy        # Deploy to Sepolia
 ```
 
 **Deployed Contract**: [`0x2BB2Eed0a66d74D92897aFAADa41a988E50C1830`](https://sepolia.etherscan.io/address/0x2BB2Eed0a66d74D92897aFAADa41a988E50C1830)
@@ -300,9 +418,16 @@ npm run deploy
 - **[Integration Guide](./docs/INTEGRATION.md)** - Framework integration examples
 - **[TypeScript Types](./packages/fhevm-sdk/src/types/)** - Type definitions
 
+### Template Documentation
+- **[Next.js Template](./templates/nextjs/README.md)** - Next.js 14 template guide
+- **[React Template](./templates/react/README.md)** - React + Vite template guide
+- **[Vue Template](./templates/vue/README.md)** - Vue 3 template guide
+- **[Node.js Template](./templates/nodejs/README.md)** - Node.js/TypeScript template guide
+
 ### Example Documentation
-- **[Next.js Example](./examples/nextjs-evidence-manager/README.md)** - Next.js setup guide
-- **[Evidence Manager](./examples/privacy-evidence-manager/README.md)** - Smart contract example
+- **[Next.js FHE Integration](./examples/nextjs-fhe-integration/README.md)** - Complete Next.js FHE example
+- **[Next.js Evidence Manager](./examples/nextjs-evidence-manager/README.md)** - Next.js setup guide
+- **[Privacy Evidence Manager](./examples/privacy-evidence-manager/README.md)** - Smart contract + React example
 
 ### Additional Resources
 - **[Deployment Guide](./docs/DEPLOYMENT.md)** - Deploy to Sepolia/Mainnet
@@ -504,14 +629,21 @@ npm install
 
 ```
 📦 fhevm-toolkit (this repo)
-├── 📦 packages/fhevm-sdk/              Universal SDK package
-├── 📱 examples/nextjs-evidence-manager/ Next.js example
-├── 📝 examples/privacy-evidence-manager/ Smart contract example
-├── 📚 docs/                            Complete documentation
-├── 🎬 demo.mp4                         Video demonstration
-├── 📄 package.json                     Monorepo config
-├── 📖 README.md                        This file
-└── 📜 LICENSE                          MIT License
+├── 📦 packages/fhevm-sdk/                Universal SDK package
+├── 🎨 templates/                         Framework templates
+│   ├── nextjs/                           Next.js 14 template
+│   ├── react/                            React + Vite template
+│   ├── vue/                              Vue 3 template
+│   └── nodejs/                           Node.js template
+├── 📱 examples/                          Example applications
+│   ├── nextjs-fhe-integration/           Complete Next.js FHE example
+│   ├── nextjs-evidence-manager/          Next.js + RainbowKit example
+│   └── privacy-evidence-manager/         Smart contract + React example
+├── 📚 docs/                              Complete documentation
+├── 🎬 demo.mp4                           Video demonstration
+├── 📄 package.json                       Monorepo config
+├── 📖 README.md                          This file
+└── 📜 LICENSE                            MIT License
 ```
 
 ---
