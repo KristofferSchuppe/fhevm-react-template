@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.24;
 
+import "@fhevm/solidity/lib/FHE.sol";
+
 contract PrivacyEvidenceManager {
     address public owner;
     uint256 public evidenceCount;
@@ -11,14 +13,14 @@ contract PrivacyEvidenceManager {
     enum EvidenceStatus { Submitted, UnderReview, Approved, Rejected, Sealed }
     enum AccessLevel { Public, Restricted, Confidential, TopSecret }
 
-    // Standard mappings for evidence management
+    // Simplified mappings with FHE encryption
     mapping(uint256 => uint256) public evidenceCaseId;
     mapping(uint256 => EvidenceType) public evidenceType;
     mapping(uint256 => EvidenceStatus) public evidenceStatus;
     mapping(uint256 => AccessLevel) public evidenceAccessLevel;
-    mapping(uint256 => bytes32) public evidenceHash;
-    mapping(uint256 => bytes32) public evidenceEncryptedHash; // Encrypted hash storage
-    mapping(uint256 => uint256) public evidenceEncryptedSize; // Encrypted size storage
+    mapping(uint256 => bytes32) public evidenceHash; // Public hash for verification
+    mapping(uint256 => euint64) public evidenceEncryptedHash; // FHE encrypted hash
+    mapping(uint256 => euint32) public evidenceEncryptedSize; // FHE encrypted size
     mapping(uint256 => address) public evidenceSubmitter;
     mapping(uint256 => uint256) public evidenceSubmissionTime;
     mapping(uint256 => bool) public evidenceSealed;
@@ -38,7 +40,6 @@ contract PrivacyEvidenceManager {
     event EvidenceReviewed(uint256 indexed evidenceId, address indexed reviewer, EvidenceStatus status);
     event CaseCreated(uint256 indexed caseId, string caseTitle, address indexed judge);
     event AccessRequested(uint256 indexed requestId, uint256 indexed evidenceId, address indexed requester);
-    event AccessGranted(address indexed user, uint256 indexed caseId);
 
     modifier onlyOwner() {
         require(msg.sender == owner, "Not authorized");
@@ -62,31 +63,17 @@ contract PrivacyEvidenceManager {
     }
 
     function authorizeJudge(address _judge) external onlyOwner {
-        require(_judge != address(0), "Invalid address");
         authorizedJudges[_judge] = true;
     }
 
     function authorizeReviewer(address _reviewer) external onlyOwner {
-        require(_reviewer != address(0), "Invalid address");
         authorizedReviewers[_reviewer] = true;
-    }
-
-    function revokeJudge(address _judge) external onlyOwner {
-        require(_judge != owner, "Cannot revoke owner");
-        authorizedJudges[_judge] = false;
-    }
-
-    function revokeReviewer(address _reviewer) external onlyOwner {
-        require(_reviewer != owner, "Cannot revoke owner");
-        authorizedReviewers[_reviewer] = false;
     }
 
     function createCase(
         string memory _title,
         AccessLevel _minAccessLevel
     ) external onlyJudge returns (uint256) {
-        require(bytes(_title).length > 0, "Title cannot be empty");
-
         caseCount++;
         caseTitle[caseCount] = _title;
         caseJudge[caseCount] = msg.sender;
@@ -109,11 +96,10 @@ contract PrivacyEvidenceManager {
         require(_caseId > 0 && _caseId <= caseCount, "Invalid case");
         require(!caseClosed[_caseId], "Case closed");
         require(hasAccess[msg.sender][_caseId] || authorizedJudges[msg.sender], "No access");
-        require(_hashData != bytes32(0), "Invalid hash");
-        require(_size > 0, "Invalid size");
 
         evidenceCount++;
 
+        // Store basic evidence info
         evidenceCaseId[evidenceCount] = _caseId;
         evidenceType[evidenceCount] = _evidenceType;
         evidenceStatus[evidenceCount] = EvidenceStatus.Submitted;
@@ -123,9 +109,8 @@ contract PrivacyEvidenceManager {
         evidenceSubmissionTime[evidenceCount] = block.timestamp;
         evidenceMetadata[evidenceCount] = _metadataURI;
 
-        // Simulate encrypted storage
-        evidenceEncryptedHash[evidenceCount] = _hashData;
-        evidenceEncryptedSize[evidenceCount] = _size;
+        // Encrypt sensitive data with FHE
+        _encryptEvidenceData(_hashData, _size);
 
         emit EvidenceSubmitted(evidenceCount, _caseId, msg.sender, _evidenceType);
         return evidenceCount;
@@ -134,7 +119,6 @@ contract PrivacyEvidenceManager {
     function reviewEvidence(uint256 _evidenceId, EvidenceStatus _status) external onlyReviewer {
         require(_evidenceId > 0 && _evidenceId <= evidenceCount, "Invalid evidence");
         require(_status == EvidenceStatus.Approved || _status == EvidenceStatus.Rejected, "Invalid status");
-        require(evidenceStatus[_evidenceId] != EvidenceStatus.Sealed, "Evidence is sealed");
 
         evidenceStatus[_evidenceId] = _status;
         emit EvidenceReviewed(_evidenceId, msg.sender, _status);
@@ -142,41 +126,19 @@ contract PrivacyEvidenceManager {
 
     function sealEvidence(uint256 _evidenceId) external onlyJudge {
         require(_evidenceId > 0 && _evidenceId <= evidenceCount, "Invalid evidence");
-        require(!evidenceSealed[_evidenceId], "Already sealed");
-
         evidenceSealed[_evidenceId] = true;
         evidenceStatus[_evidenceId] = EvidenceStatus.Sealed;
     }
 
     function grantAccess(address _user, uint256 _caseId) external onlyJudge {
         require(_caseId > 0 && _caseId <= caseCount, "Invalid case");
-        require(_user != address(0), "Invalid address");
-
         hasAccess[_user][_caseId] = true;
-        emit AccessGranted(_user, _caseId);
-    }
-
-    function revokeAccess(address _user, uint256 _caseId) external onlyJudge {
-        require(_caseId > 0 && _caseId <= caseCount, "Invalid case");
-        require(_user != owner, "Cannot revoke owner");
-
-        hasAccess[_user][_caseId] = false;
     }
 
     function closeCase(uint256 _caseId) external onlyJudge {
         require(_caseId > 0 && _caseId <= caseCount, "Invalid case");
         require(caseJudge[_caseId] == msg.sender, "Not case judge");
-        require(!caseClosed[_caseId], "Already closed");
-
         caseClosed[_caseId] = true;
-    }
-
-    function reopenCase(uint256 _caseId) external onlyJudge {
-        require(_caseId > 0 && _caseId <= caseCount, "Invalid case");
-        require(caseJudge[_caseId] == msg.sender, "Not case judge");
-        require(caseClosed[_caseId], "Case not closed");
-
-        caseClosed[_caseId] = false;
     }
 
     function getEvidenceBasicInfo(uint256 _evidenceId) external view returns (
@@ -204,8 +166,7 @@ contract PrivacyEvidenceManager {
     function getEvidenceDetails(uint256 _evidenceId) external view returns (
         address submitter,
         uint256 submissionTime,
-        string memory metadataURI,
-        bytes32 hashData
+        string memory metadataURI
     ) {
         require(_evidenceId > 0 && _evidenceId <= evidenceCount, "Invalid evidence");
         uint256 _caseId = evidenceCaseId[_evidenceId];
@@ -214,8 +175,7 @@ contract PrivacyEvidenceManager {
         return (
             evidenceSubmitter[_evidenceId],
             evidenceSubmissionTime[_evidenceId],
-            evidenceMetadata[_evidenceId],
-            evidenceHash[_evidenceId]
+            evidenceMetadata[_evidenceId]
         );
     }
 
@@ -240,33 +200,44 @@ contract PrivacyEvidenceManager {
         );
     }
 
+    function _encryptEvidenceData(bytes32 _hashData, uint32 _size) internal {
+        // Encrypt sensitive data using FHE
+        euint64 encryptedHash = FHE.asEuint64(uint64(uint256(_hashData) >> 192));
+        euint32 encryptedSize = FHE.asEuint32(_size);
+
+        // Store encrypted data
+        evidenceEncryptedHash[evidenceCount] = encryptedHash;
+        evidenceEncryptedSize[evidenceCount] = encryptedSize;
+
+        // Set access permissions
+        FHE.allowThis(encryptedHash);
+        FHE.allowThis(encryptedSize);
+        FHE.allow(encryptedHash, msg.sender);
+        FHE.allow(encryptedSize, msg.sender);
+    }
+
     function getEncryptedEvidenceData(uint256 _evidenceId) external view returns (
         bytes32 encryptedHash,
-        uint256 encryptedSize
+        bytes32 encryptedSize
     ) {
         require(_evidenceId > 0 && _evidenceId <= evidenceCount, "Invalid evidence");
         uint256 _caseId = evidenceCaseId[_evidenceId];
         require(hasAccess[msg.sender][_caseId] || authorizedJudges[msg.sender], "No access");
 
         return (
-            evidenceEncryptedHash[_evidenceId],
-            evidenceEncryptedSize[_evidenceId]
+            FHE.toBytes32(evidenceEncryptedHash[_evidenceId]),
+            FHE.toBytes32(evidenceEncryptedSize[_evidenceId])
         );
+    }
+
+    function grantFHEAccess(uint256 _evidenceId, address _user) external onlyJudge {
+        require(_evidenceId > 0 && _evidenceId <= evidenceCount, "Invalid evidence");
+
+        FHE.allow(evidenceEncryptedHash[_evidenceId], _user);
+        FHE.allow(evidenceEncryptedSize[_evidenceId], _user);
     }
 
     function getTotalStats() external view returns (uint256, uint256, uint256) {
         return (caseCount, evidenceCount, requestCount);
-    }
-
-    function isJudge(address _address) external view returns (bool) {
-        return authorizedJudges[_address];
-    }
-
-    function isReviewer(address _address) external view returns (bool) {
-        return authorizedReviewers[_address];
-    }
-
-    function hasAccessToCase(address _user, uint256 _caseId) external view returns (bool) {
-        return hasAccess[_user][_caseId] || authorizedJudges[_user];
     }
 }

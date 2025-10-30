@@ -1,0 +1,1062 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Privacy Evidence Manager - Secure Judicial Evidence Management</title>
+    <script src="https://cdn.jsdelivr.net/npm/ethers@6.7.0/dist/ethers.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+            padding: 1rem 2rem;
+        }
+
+        .header h1 {
+            font-size: 2rem;
+            background: linear-gradient(45deg, #ffd89b, #19547b);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            text-align: center;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            text-align: center;
+            opacity: 0.8;
+            font-size: 1.1rem;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            flex: 1;
+        }
+
+        .nav-tabs {
+            display: flex;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 8px;
+            margin-bottom: 2rem;
+            gap: 8px;
+        }
+
+        .nav-tab {
+            flex: 1;
+            padding: 12px 20px;
+            background: transparent;
+            color: rgba(255, 255, 255, 0.7);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .nav-tab.active {
+            background: linear-gradient(45deg, #ffd89b, #19547b);
+            color: white;
+        }
+
+        .nav-tab:hover:not(.active) {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+        }
+
+        .card h2 {
+            color: #ffd89b;
+            margin-bottom: 1.5rem;
+            font-size: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: #e0e0e0;
+            font-weight: 500;
+        }
+
+        .form-control {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 8px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .form-control:focus {
+            outline: none;
+            border-color: #ffd89b;
+            box-shadow: 0 0 0 3px rgba(255, 216, 155, 0.3);
+        }
+
+        .form-control::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .btn {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #ffd89b, #19547b);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            margin-right: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 25px rgba(255, 216, 155, 0.4);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #66bb6a, #4caf50);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #f44336, #d32f2f);
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin: 2px 4px;
+        }
+
+        .status-submitted { background: #2196f3; }
+        .status-under-review { background: #ff9800; }
+        .status-approved { background: #4caf50; }
+        .status-rejected { background: #f44336; }
+        .status-sealed { background: #9c27b0; }
+
+        .access-level {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8rem;
+            font-weight: 500;
+        }
+
+        .access-public { background: #4caf50; }
+        .access-restricted { background: #ff9800; }
+        .access-confidential { background: #f44336; }
+        .access-topsecret { background: #9c27b0; }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 1.5rem;
+        }
+
+        .evidence-item, .case-item {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 12px;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .evidence-item:hover, .case-item:hover {
+            background: rgba(255, 255, 255, 0.1);
+            border-color: #ffd89b;
+        }
+
+        .evidence-header, .case-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 1rem;
+        }
+
+        .evidence-id, .case-id {
+            font-weight: bold;
+            color: #ffd89b;
+        }
+
+        .connection-status {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .connected {
+            background: #4caf50;
+            color: white;
+        }
+
+        .disconnected {
+            background: #f44336;
+            color: white;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 2rem;
+            opacity: 0.7;
+        }
+
+        .spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255,255,255,.3);
+            border-radius: 50%;
+            border-top-color: #ffd89b;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .error-message {
+            background: rgba(244, 67, 54, 0.2);
+            border: 1px solid rgba(244, 67, 54, 0.5);
+            color: #f44336;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        .success-message {
+            background: rgba(76, 175, 80, 0.2);
+            border: 1px solid rgba(76, 175, 80, 0.5);
+            color: #4caf50;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 1rem 0;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 1rem;
+            }
+
+            .nav-tabs {
+                flex-direction: column;
+            }
+
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="connection-status" id="connectionStatus">Disconnected</div>
+
+    <header class="header">
+        <h1>Privacy Evidence Manager</h1>
+        <p>Secure Judicial Evidence Management Platform with Zama FHE</p>
+    </header>
+
+    <div class="container">
+        <nav class="nav-tabs">
+            <button class="nav-tab active" onclick="showTab('connect')">Connect Wallet</button>
+            <button class="nav-tab" onclick="showTab('cases')">Case Management</button>
+            <button class="nav-tab" onclick="showTab('evidence')">Evidence Management</button>
+            <button class="nav-tab" onclick="showTab('access')">Access Control</button>
+            <button class="nav-tab" onclick="showTab('stats')">System Statistics</button>
+        </nav>
+
+        <!-- Connect Wallet Tab -->
+        <div id="connect" class="tab-content active">
+            <div class="card">
+                <h2>Connect Wallet</h2>
+                <div id="walletInfo" class="loading">
+                    <div class="spinner"></div>
+                    Checking wallet connection...
+                </div>
+                <button id="connectWallet" class="btn" style="display: none;">Connect MetaMask</button>
+            </div>
+
+            <div class="card" id="contractInfo" style="display: none;">
+                <h2>Contract Information</h2>
+                <div class="form-group">
+                    <label>Contract Address:</label>
+                    <input type="text" id="contractAddress" class="form-control" value="0x2BB2Eed0a66d74D92897aFAADa41a988E50C1830" placeholder="Enter contract address (required for real blockchain interaction)">
+                </div>
+                <button id="loadContract" class="btn">Load Contract</button>
+                <div id="contractStatus" style="margin-top: 1rem;"></div>
+            </div>
+        </div>
+
+        <!-- Cases Management Tab -->
+        <div id="cases" class="tab-content">
+            <div class="card">
+                <h2>Create New Case</h2>
+                <div class="form-group">
+                    <label>Case Title:</label>
+                    <input type="text" id="caseTitle" class="form-control" placeholder="Enter case title">
+                </div>
+                <div class="form-group">
+                    <label>Minimum Access Level:</label>
+                    <select id="minAccessLevel" class="form-control">
+                        <option value="0">Public</option>
+                        <option value="1">Restricted</option>
+                        <option value="2">Confidential</option>
+                        <option value="3">Top Secret</option>
+                    </select>
+                </div>
+                <button onclick="createCase()" class="btn">Create Case</button>
+            </div>
+
+            <div class="card">
+                <h2>Cases List</h2>
+                <div id="casesList" class="grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading cases...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Evidence Management Tab -->
+        <div id="evidence" class="tab-content">
+            <div class="card">
+                <h2>Submit Evidence</h2>
+                <div class="form-group">
+                    <label>Case ID:</label>
+                    <input type="number" id="evidenceCaseId" class="form-control" placeholder="Enter case ID">
+                </div>
+                <div class="form-group">
+                    <label>Evidence Type:</label>
+                    <select id="evidenceType" class="form-control">
+                        <option value="0">Document</option>
+                        <option value="1">Audio</option>
+                        <option value="2">Video</option>
+                        <option value="3">Image</option>
+                        <option value="4">Digital Evidence</option>
+                        <option value="5">Physical Evidence</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Access Level:</label>
+                    <select id="evidenceAccessLevel" class="form-control">
+                        <option value="0">Public</option>
+                        <option value="1">Restricted</option>
+                        <option value="2">Confidential</option>
+                        <option value="3">Top Secret</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Evidence Hash:</label>
+                    <input type="text" id="evidenceHash" class="form-control" placeholder="Enter evidence hash value">
+                </div>
+                <div class="form-group">
+                    <label>File Size (bytes):</label>
+                    <input type="number" id="evidenceSize" class="form-control" placeholder="Enter file size">
+                </div>
+                <div class="form-group">
+                    <label>Metadata URI:</label>
+                    <input type="text" id="metadataURI" class="form-control" placeholder="Enter metadata URI">
+                </div>
+                <button onclick="submitEvidence()" class="btn">Submit Evidence</button>
+            </div>
+
+            <div class="card">
+                <h2>Evidence List</h2>
+                <div id="evidencesList" class="grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading evidence...
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Access Management Tab -->
+        <div id="access" class="tab-content">
+            <div class="card">
+                <h2>Authorize Users</h2>
+                <div class="form-group">
+                    <label>User Address:</label>
+                    <input type="text" id="authorizeAddress" class="form-control" placeholder="Enter user address to authorize">
+                </div>
+                <button onclick="authorizeAsJudge()" class="btn">Authorize as Judge</button>
+                <button onclick="authorizeAsReviewer()" class="btn btn-secondary">Authorize as Reviewer</button>
+            </div>
+
+            <div class="card">
+                <h2>Evidence Review</h2>
+                <div class="form-group">
+                    <label>Evidence ID:</label>
+                    <input type="number" id="reviewEvidenceId" class="form-control" placeholder="Enter evidence ID">
+                </div>
+                <div class="form-group">
+                    <label>Review Status:</label>
+                    <select id="reviewStatus" class="form-control">
+                        <option value="2">Approve</option>
+                        <option value="3">Reject</option>
+                    </select>
+                </div>
+                <button onclick="reviewEvidence()" class="btn">Review Evidence</button>
+            </div>
+
+            <div class="card">
+                <h2>Grant FHE Access</h2>
+                <div class="form-group">
+                    <label>Evidence ID:</label>
+                    <input type="number" id="fheEvidenceId" class="form-control" placeholder="Enter evidence ID">
+                </div>
+                <div class="form-group">
+                    <label>User Address:</label>
+                    <input type="text" id="fheUserAddress" class="form-control" placeholder="Enter user address">
+                </div>
+                <button onclick="grantFHEAccess()" class="btn btn-secondary">Grant FHE Access</button>
+            </div>
+
+            <div class="card">
+                <h2>View Encrypted Data</h2>
+                <div class="form-group">
+                    <label>Evidence ID:</label>
+                    <input type="number" id="encryptedDataEvidenceId" class="form-control" placeholder="Enter evidence ID">
+                </div>
+                <button onclick="viewEncryptedData()" class="btn">View Encrypted Data</button>
+                <div id="encryptedDataResult" style="margin-top: 1rem; padding: 1rem; background: rgba(255,255,255,0.1); border-radius: 8px; display: none;">
+                    <h4>Encrypted Data:</h4>
+                    <p><strong>Encrypted Hash:</strong> <span id="encryptedHash"></span></p>
+                    <p><strong>Encrypted Size:</strong> <span id="encryptedSize"></span></p>
+                </div>
+            </div>
+
+            <div class="card">
+                <h2>Grant Case Access</h2>
+                <div class="form-group">
+                    <label>User Address:</label>
+                    <input type="text" id="grantUserAddress" class="form-control" placeholder="Enter user address">
+                </div>
+                <div class="form-group">
+                    <label>Case ID:</label>
+                    <input type="number" id="grantCaseId" class="form-control" placeholder="Enter case ID">
+                </div>
+                <button onclick="grantCaseAccess()" class="btn btn-secondary">Grant Access</button>
+            </div>
+        </div>
+
+        <!-- Statistics Tab -->
+        <div id="stats" class="tab-content">
+            <div class="card">
+                <h2>System Statistics</h2>
+                <div id="systemStats" class="grid">
+                    <div class="loading">
+                        <div class="spinner"></div>
+                        Loading statistics...
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let provider, signer, contract;
+        let contractABI = [
+            "function createCase(string memory _title, uint8 _minAccessLevel) external returns (uint256)",
+            "function submitEvidence(uint256 _caseId, uint8 _evidenceType, uint8 _accessLevel, bytes32 _hashData, uint32 _size, string memory _metadataURI) external returns (uint256)",
+            "function reviewEvidence(uint256 _evidenceId, uint8 _status) external",
+            "function sealEvidence(uint256 _evidenceId) external",
+            "function grantAccess(address _user, uint256 _caseId) external",
+            "function grantFHEAccess(uint256 _evidenceId, address _user) external",
+            "function getEvidenceBasicInfo(uint256 _evidenceId) external view returns (uint256, uint256, uint8, uint8, uint8, bool)",
+            "function getEvidenceDetails(uint256 _evidenceId) external view returns (address, uint256, string)",
+            "function getEncryptedEvidenceData(uint256 _evidenceId) external view returns (bytes32, bytes32)",
+            "function getCaseBasicInfo(uint256 _caseId) external view returns (uint256, string, address, uint256, bool, uint8)",
+            "function getTotalStats() external view returns (uint256, uint256, uint256)",
+            "function authorizeJudge(address _judge) external",
+            "function authorizeReviewer(address _reviewer) external",
+            "function closeCase(uint256 _caseId) external",
+            "event CaseCreated(uint256 indexed caseId, string caseTitle, address indexed judge)",
+            "event EvidenceSubmitted(uint256 indexed evidenceId, uint256 indexed caseId, address indexed submitter, uint8 evidenceType)",
+            "event EvidenceReviewed(uint256 indexed evidenceId, address indexed reviewer, uint8 status)"
+        ];
+
+        // Initialize the app
+        window.addEventListener('load', async () => {
+            await checkWalletConnection();
+        });
+
+        async function checkWalletConnection() {
+            const statusElement = document.getElementById('connectionStatus');
+            const walletInfo = document.getElementById('walletInfo');
+            const connectButton = document.getElementById('connectWallet');
+
+            try {
+                if (typeof window.ethereum !== 'undefined') {
+                    provider = new ethers.BrowserProvider(window.ethereum);
+                    const accounts = await provider.listAccounts();
+
+                    if (accounts.length > 0) {
+                        signer = await provider.getSigner();
+                        const address = await signer.getAddress();
+                        const balance = await provider.getBalance(address);
+                        const network = await provider.getNetwork();
+
+                        statusElement.textContent = 'Connected';
+                        statusElement.className = 'connection-status connected';
+
+                        walletInfo.innerHTML = `
+                            <strong>Wallet Connected</strong><br>
+                            Address: ${address}<br>
+                            Balance: ${ethers.formatEther(balance)} ETH<br>
+                            Network: ${network.name} (Chain ID: ${network.chainId})
+                        `;
+
+                        document.getElementById('contractInfo').style.display = 'block';
+                    } else {
+                        statusElement.textContent = 'Disconnected';
+                        statusElement.className = 'connection-status disconnected';
+                        walletInfo.innerHTML = '<strong>Wallet Not Connected</strong><br>Please click the button below to connect your wallet';
+                        connectButton.style.display = 'inline-block';
+                    }
+                } else {
+                    statusElement.textContent = 'Not Installed';
+                    statusElement.className = 'connection-status disconnected';
+                    walletInfo.innerHTML = '<strong>MetaMask Not Detected</strong><br>Please install MetaMask browser extension';
+                }
+            } catch (error) {
+                console.error('Failed to check wallet connection:', error);
+                statusElement.textContent = 'Error';
+                statusElement.className = 'connection-status disconnected';
+                walletInfo.innerHTML = '<div class="error-message">Error checking wallet connection</div>';
+            }
+        }
+
+        document.getElementById('connectWallet').onclick = async () => {
+            try {
+                await window.ethereum.request({ method: 'eth_requestAccounts' });
+                await checkWalletConnection();
+            } catch (error) {
+                console.error('Failed to connect wallet:', error);
+                showMessage('Failed to connect wallet: ' + error.message, 'error');
+            }
+        };
+
+        document.getElementById('loadContract').onclick = async () => {
+            const address = document.getElementById('contractAddress').value;
+            const statusDiv = document.getElementById('contractStatus');
+
+            if (!address) {
+                showMessage('Please enter contract address', 'error');
+                return;
+            }
+
+            if (!signer) {
+                showMessage('Please connect your wallet first', 'error');
+                return;
+            }
+
+            try {
+                contract = new ethers.Contract(address, contractABI, signer);
+
+                // Test contract connectivity
+                await contract.getTotalStats();
+
+                statusDiv.innerHTML = '<div class="success-message">Contract loaded successfully! Address: ' + address + '</div>';
+                showMessage('Contract loaded successfully!', 'success');
+                await loadAllData();
+            } catch (error) {
+                console.error('Failed to load contract:', error);
+                statusDiv.innerHTML = '<div class="error-message">Failed to load contract: ' + error.message + '</div>';
+                showMessage('Failed to load contract: ' + error.message, 'error');
+            }
+        };
+
+        async function createCase() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const title = document.getElementById('caseTitle').value;
+            const minAccessLevel = document.getElementById('minAccessLevel').value;
+
+            if (!title) {
+                showMessage('Please enter case title', 'error');
+                return;
+            }
+
+            try {
+                const tx = await contract.createCase(title, minAccessLevel);
+                showMessage('Case creation transaction submitted, waiting for confirmation...', 'success');
+
+                await tx.wait();
+                showMessage('Case created successfully!', 'success');
+
+                // Clear form
+                document.getElementById('caseTitle').value = '';
+
+                await loadCases();
+            } catch (error) {
+                console.error('Failed to create case:', error);
+                showMessage('Failed to create case: ' + error.message, 'error');
+            }
+        }
+
+        async function submitEvidence() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const caseId = document.getElementById('evidenceCaseId').value;
+            const evidenceType = document.getElementById('evidenceType').value;
+            const accessLevel = document.getElementById('evidenceAccessLevel').value;
+            const hash = document.getElementById('evidenceHash').value;
+            const size = document.getElementById('evidenceSize').value;
+            const metadataURI = document.getElementById('metadataURI').value;
+
+            if (!caseId || !hash || !size) {
+                showMessage('Please fill all required fields', 'error');
+                return;
+            }
+
+            try {
+                const hashBytes32 = ethers.keccak256(ethers.toUtf8Bytes(hash));
+                const tx = await contract.submitEvidence(caseId, evidenceType, accessLevel, hashBytes32, size, metadataURI);
+                showMessage('Evidence submission transaction submitted, waiting for confirmation...', 'success');
+
+                await tx.wait();
+                showMessage('Evidence submitted successfully!', 'success');
+
+                // Clear form
+                document.getElementById('evidenceCaseId').value = '';
+                document.getElementById('evidenceHash').value = '';
+                document.getElementById('evidenceSize').value = '';
+                document.getElementById('metadataURI').value = '';
+
+                await loadEvidence();
+            } catch (error) {
+                console.error('Failed to submit evidence:', error);
+                showMessage('Failed to submit evidence: ' + error.message, 'error');
+            }
+        }
+
+        async function reviewEvidence() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const evidenceId = document.getElementById('reviewEvidenceId').value;
+            const status = document.getElementById('reviewStatus').value;
+
+            if (!evidenceId) {
+                showMessage('Please enter evidence ID', 'error');
+                return;
+            }
+
+            try {
+                const tx = await contract.reviewEvidence(evidenceId, status);
+                showMessage('Review transaction submitted, waiting for confirmation...', 'success');
+
+                await tx.wait();
+                showMessage('Evidence review completed successfully!', 'success');
+
+                document.getElementById('reviewEvidenceId').value = '';
+
+                await loadEvidence();
+            } catch (error) {
+                console.error('Failed to review evidence:', error);
+                showMessage('Failed to review evidence: ' + error.message, 'error');
+            }
+        }
+
+        async function grantFHEAccess() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const evidenceId = document.getElementById('fheEvidenceId').value;
+            const userAddress = document.getElementById('fheUserAddress').value;
+
+            if (!evidenceId || !userAddress) {
+                showMessage('Please enter evidence ID and user address', 'error');
+                return;
+            }
+
+            try {
+                const tx = await contract.grantFHEAccess(evidenceId, userAddress);
+                showMessage('FHE access grant transaction submitted, waiting for confirmation...', 'success');
+
+                await tx.wait();
+                showMessage('FHE access granted successfully!', 'success');
+
+                document.getElementById('fheEvidenceId').value = '';
+                document.getElementById('fheUserAddress').value = '';
+            } catch (error) {
+                console.error('Failed to grant FHE access:', error);
+                showMessage('Failed to grant FHE access: ' + error.message, 'error');
+            }
+        }
+
+        async function authorizeAsJudge() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const address = document.getElementById('authorizeAddress').value;
+
+            if (!address) {
+                showMessage('Please enter user address', 'error');
+                return;
+            }
+
+            try {
+                const tx = await contract.authorizeJudge(address);
+                showMessage('Authorization transaction submitted, waiting for confirmation...', 'success');
+
+                await tx.wait();
+                showMessage('User authorized as judge successfully!', 'success');
+
+                document.getElementById('authorizeAddress').value = '';
+            } catch (error) {
+                console.error('Failed to authorize judge:', error);
+                showMessage('Failed to authorize judge: ' + error.message, 'error');
+            }
+        }
+
+        async function authorizeAsReviewer() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const address = document.getElementById('authorizeAddress').value;
+
+            if (!address) {
+                showMessage('Please enter user address', 'error');
+                return;
+            }
+
+            try {
+                const tx = await contract.authorizeReviewer(address);
+                showMessage('Authorization transaction submitted, waiting for confirmation...', 'success');
+
+                await tx.wait();
+                showMessage('User authorized as reviewer successfully!', 'success');
+
+                document.getElementById('authorizeAddress').value = '';
+            } catch (error) {
+                console.error('Failed to authorize reviewer:', error);
+                showMessage('Failed to authorize reviewer: ' + error.message, 'error');
+            }
+        }
+
+        async function grantCaseAccess() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const userAddress = document.getElementById('grantUserAddress').value;
+            const caseId = document.getElementById('grantCaseId').value;
+
+            if (!userAddress || !caseId) {
+                showMessage('Please enter user address and case ID', 'error');
+                return;
+            }
+
+            try {
+                const tx = await contract.grantAccess(userAddress, caseId);
+                showMessage('Access grant transaction submitted, waiting for confirmation...', 'success');
+
+                await tx.wait();
+                showMessage('Case access granted successfully!', 'success');
+
+                document.getElementById('grantUserAddress').value = '';
+                document.getElementById('grantCaseId').value = '';
+            } catch (error) {
+                console.error('Failed to grant case access:', error);
+                showMessage('Failed to grant case access: ' + error.message, 'error');
+            }
+        }
+
+        async function viewEncryptedData() {
+            if (!contract) {
+                showMessage('Please load contract first', 'error');
+                return;
+            }
+
+            const evidenceId = document.getElementById('encryptedDataEvidenceId').value;
+
+            if (!evidenceId) {
+                showMessage('Please enter evidence ID', 'error');
+                return;
+            }
+
+            try {
+                const encryptedData = await contract.getEncryptedEvidenceData(evidenceId);
+
+                document.getElementById('encryptedHash').textContent = encryptedData[0];
+                document.getElementById('encryptedSize').textContent = encryptedData[1];
+                document.getElementById('encryptedDataResult').style.display = 'block';
+
+                showMessage('Successfully retrieved encrypted data!', 'success');
+            } catch (error) {
+                console.error('Failed to get encrypted data:', error);
+                showMessage('Failed to get encrypted data: ' + error.message, 'error');
+            }
+        }
+
+        async function loadAllData() {
+            await Promise.all([
+                loadCases(),
+                loadEvidence(),
+                loadSystemStats()
+            ]);
+        }
+
+        async function loadCases() {
+            const casesList = document.getElementById('casesList');
+            if (!contract) {
+                casesList.innerHTML = '<div class="error-message">Please load contract first</div>';
+                return;
+            }
+
+            try {
+                const cases = [];
+                for (let i = 1; i <= 20; i++) {
+                    try {
+                        const caseInfo = await contract.getCaseBasicInfo(i);
+                        cases.push({
+                            id: i,
+                            title: caseInfo[1],
+                            judge: caseInfo[2],
+                            creationTime: caseInfo[3],
+                            isClosed: caseInfo[4],
+                            minAccessLevel: caseInfo[5]
+                        });
+                    } catch (e) {
+                        break;
+                    }
+                }
+
+                if (cases.length === 0) {
+                    casesList.innerHTML = '<div>No cases found</div>';
+                    return;
+                }
+
+                casesList.innerHTML = cases.map(c => `
+                    <div class="case-item">
+                        <div class="case-header">
+                            <span class="case-id">Case #${c.id}</span>
+                            <span class="status-badge ${c.isClosed ? 'status-rejected' : 'status-approved'}">
+                                ${c.isClosed ? 'Closed' : 'Active'}
+                            </span>
+                        </div>
+                        <h3>${c.title}</h3>
+                        <p><strong>Judge:</strong> ${c.judge}</p>
+                        <p><strong>Created:</strong> ${new Date(Number(c.creationTime) * 1000).toLocaleString()}</p>
+                        <p><strong>Access Level:</strong>
+                            <span class="access-level access-${['public', 'restricted', 'confidential', 'topsecret'][c.minAccessLevel]}">
+                                ${['Public', 'Restricted', 'Confidential', 'Top Secret'][c.minAccessLevel]}
+                            </span>
+                        </p>
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load cases:', error);
+                casesList.innerHTML = '<div class="error-message">Failed to load cases: ' + error.message + '</div>';
+            }
+        }
+
+        async function loadEvidence() {
+            const evidencesList = document.getElementById('evidencesList');
+            if (!contract) {
+                evidencesList.innerHTML = '<div class="error-message">Please load contract first</div>';
+                return;
+            }
+
+            try {
+                const evidences = [];
+                for (let i = 1; i <= 50; i++) {
+                    try {
+                        const basicInfo = await contract.getEvidenceBasicInfo(i);
+                        const details = await contract.getEvidenceDetails(i);
+                        evidences.push({
+                            id: basicInfo[0],
+                            caseId: basicInfo[1],
+                            type: basicInfo[2],
+                            status: basicInfo[3],
+                            accessLevel: basicInfo[4],
+                            isSealed: basicInfo[5],
+                            submitter: details[0],
+                            submissionTime: details[1],
+                            metadataURI: details[2]
+                        });
+                    } catch (e) {
+                        break;
+                    }
+                }
+
+                if (evidences.length === 0) {
+                    evidencesList.innerHTML = '<div>No evidence found</div>';
+                    return;
+                }
+
+                const typeNames = ['Document', 'Audio', 'Video', 'Image', 'Digital Evidence', 'Physical Evidence'];
+                const statusNames = ['Submitted', 'Under Review', 'Approved', 'Rejected', 'Sealed'];
+                const accessLevelNames = ['Public', 'Restricted', 'Confidential', 'Top Secret'];
+
+                evidencesList.innerHTML = evidences.map(e => `
+                    <div class="evidence-item">
+                        <div class="evidence-header">
+                            <span class="evidence-id">Evidence #${e.id}</span>
+                            <span class="status-badge status-${['submitted', 'under-review', 'approved', 'rejected', 'sealed'][e.status]}">
+                                ${statusNames[e.status]}
+                            </span>
+                        </div>
+                        <p><strong>Case ID:</strong> ${e.caseId}</p>
+                        <p><strong>Type:</strong> ${typeNames[e.type]}</p>
+                        <p><strong>Access Level:</strong>
+                            <span class="access-level access-${['public', 'restricted', 'confidential', 'topsecret'][e.accessLevel]}">
+                                ${accessLevelNames[e.accessLevel]}
+                            </span>
+                        </p>
+                        <p><strong>Submitter:</strong> ${e.submitter}</p>
+                        <p><strong>Submitted:</strong> ${new Date(Number(e.submissionTime) * 1000).toLocaleString()}</p>
+                        ${e.isSealed ? '<p><strong>Status:</strong> <span class="status-badge status-sealed">Sealed</span></p>' : ''}
+                        ${e.metadataURI ? `<p><strong>Metadata:</strong> <a href="${e.metadataURI}" target="_blank">View</a></p>` : ''}
+                    </div>
+                `).join('');
+            } catch (error) {
+                console.error('Failed to load evidence:', error);
+                evidencesList.innerHTML = '<div class="error-message">Failed to load evidence: ' + error.message + '</div>';
+            }
+        }
+
+        async function loadSystemStats() {
+            const systemStats = document.getElementById('systemStats');
+            if (!contract) {
+                systemStats.innerHTML = '<div class="error-message">Please load contract first</div>';
+                return;
+            }
+
+            try {
+                const stats = await contract.getTotalStats();
+                systemStats.innerHTML = `
+                    <div class="case-item">
+                        <h3>Total Cases</h3>
+                        <p style="font-size: 2rem; color: #ffd89b; font-weight: bold;">${stats[0].toString()}</p>
+                    </div>
+                    <div class="case-item">
+                        <h3>Total Evidence</h3>
+                        <p style="font-size: 2rem; color: #ffd89b; font-weight: bold;">${stats[1].toString()}</p>
+                    </div>
+                    <div class="case-item">
+                        <h3>Total Requests</h3>
+                        <p style="font-size: 2rem; color: #ffd89b; font-weight: bold;">${stats[2].toString()}</p>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Failed to load system stats:', error);
+                systemStats.innerHTML = '<div class="error-message">Failed to load system stats: ' + error.message + '</div>';
+            }
+        }
+
+        function showTab(tabName) {
+            // Hide all tab contents
+            const tabContents = document.querySelectorAll('.tab-content');
+            tabContents.forEach(content => content.classList.remove('active'));
+
+            // Remove active class from all tabs
+            const tabs = document.querySelectorAll('.nav-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+
+            // Show selected tab content
+            document.getElementById(tabName).classList.add('active');
+
+            // Add active class to selected tab
+            event.target.classList.add('active');
+
+            // Load data for the selected tab
+            if (contract) {
+                if (tabName === 'cases') {
+                    loadCases();
+                } else if (tabName === 'evidence') {
+                    loadEvidence();
+                } else if (tabName === 'stats') {
+                    loadSystemStats();
+                }
+            }
+        }
+
+        function showMessage(message, type) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type === 'error' ? 'error-message' : 'success-message';
+            messageDiv.textContent = message;
+
+            // Insert at the top of the active tab
+            const activeTab = document.querySelector('.tab-content.active');
+            activeTab.insertBefore(messageDiv, activeTab.firstChild);
+
+            // Remove after 5 seconds
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+    </script>
+</body>
+</html>

@@ -1,6 +1,6 @@
-# FHE Evidence Manager - Next.js Example
+# Next.js FHE Example Application
 
-Next.js application demonstrating FHEVM SDK integration with confidential judicial evidence management.
+A comprehensive Next.js 14 example application demonstrating Fully Homomorphic Encryption (FHE) capabilities using the `@fhevm-toolkit/sdk`. This application showcases secure data encryption, homomorphic computations, and real-world use cases for privacy-preserving applications.
 
 ---
 
@@ -8,13 +8,13 @@ Next.js application demonstrating FHEVM SDK integration with confidential judici
 
 This example showcases how to integrate the `@fhevm-toolkit/sdk` into a Next.js 14 application with App Router, demonstrating:
 
-- ✅ Client-side FHE encryption
-- ✅ Wagmi + Rainbow Kit wallet integration
-- ✅ React hooks for FHEVM operations
-- ✅ Tailwind CSS styling
-- ✅ Real-time evidence submission
-
-**Live Demo**: [https://fhe-evidence-manager.vercel.app/](https://fhe-evidence-manager.vercel.app/)
+- ✅ **Encryption Demo**: Interactive demonstration of FHE encryption and decryption
+- ✅ **Homomorphic Computation**: Perform operations on encrypted data without decryption
+- ✅ **Key Management**: Generate, store, and manage FHE encryption keys
+- ✅ **Banking Example**: Secure financial transaction processing with encrypted balances
+- ✅ **Medical Example**: HIPAA-compliant medical data handling and analysis
+- ✅ **Type-Safe API**: Fully typed API routes with comprehensive error handling
+- ✅ **Modern UI**: Built with Tailwind CSS and custom React components
 
 ---
 
@@ -22,68 +22,89 @@ This example showcases how to integrate the `@fhevm-toolkit/sdk` into a Next.js 
 
 ### Prerequisites
 
-- Node.js 18+ or 20+
-- npm or yarn
-- MetaMask or similar Web3 wallet
+- Node.js 18.0.0 or higher
+- npm, yarn, or pnpm package manager
 
 ### Installation
 
+1. Clone the repository and navigate to the project:
+
 ```bash
-# Install dependencies
+cd examples/nextjs-fhe-example
+```
+
+2. Install dependencies:
+
+```bash
 npm install
-
-# Copy environment file
-cp .env.example .env.local
-
-# Update .env.local with your values
+# or
+yarn install
+# or
+pnpm install
 ```
 
-### Environment Variables
-
-Create `.env.local`:
-
-```env
-# Contract Address
-NEXT_PUBLIC_CONTRACT_ADDRESS=0x2BB2Eed0a66d74D92897aFAADa41a988E50C1830
-
-# Network
-NEXT_PUBLIC_CHAIN_ID=11155111
-
-# RPC URL
-NEXT_PUBLIC_RPC_URL=https://rpc.sepolia.org
-
-# WalletConnect (optional)
-NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID=your_project_id
-```
-
-### Run Development Server
+3. Run the development server:
 
 ```bash
 npm run dev
+# or
+yarn dev
+# or
+pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000)
+4. Open [http://localhost:3000](http://localhost:3000) in your browser
 
 ---
 
 ## 🏗️ Project Structure
 
 ```
-app/
-├── layout.tsx              # Root layout
-├── page.tsx                # Home page (main demo)
-├── providers.tsx           # Wagmi/RainbowKit providers
+src/
+├── app/                        # App Router (Next.js 14)
+│   ├── layout.tsx              # Root layout with FHE provider
+│   ├── page.tsx                # Home page with tabbed interface
+│   ├── globals.css             # Global styles and Tailwind
+│   └── api/                    # API routes
+│       ├── fhe/
+│       │   ├── route.ts        # FHE initialization
+│       │   ├── encrypt/route.ts # Encryption endpoint
+│       │   ├── decrypt/route.ts # Decryption endpoint
+│       │   └── compute/route.ts # Computation endpoint
+│       └── keys/route.ts       # Key management
 │
-hooks/
-├── useFhevm.ts            # Custom FHEVM hook
-└── useEthersSigner.ts     # Wagmi to ethers adapter
+├── components/                 # React components
+│   ├── ui/                     # Basic UI components
+│   │   ├── Button.tsx          # Reusable button component
+│   │   ├── Input.tsx           # Form input component
+│   │   └── Card.tsx            # Card container component
+│   ├── fhe/                    # FHE functionality components
+│   │   ├── FHEProvider.tsx     # FHE context provider
+│   │   ├── EncryptionDemo.tsx  # Encryption demo interface
+│   │   ├── ComputationDemo.tsx # Computation demo interface
+│   │   └── KeyManager.tsx      # Key management interface
+│   └── examples/               # Use case examples
+│       ├── BankingExample.tsx  # Banking use case
+│       └── MedicalExample.tsx  # Medical use case
 │
-lib/
-├── wagmi.ts               # Wagmi configuration
-└── fhevm.ts               # FHEVM utilities
+├── lib/                        # Utility libraries
+│   ├── fhe/                    # FHE integration library
+│   │   ├── client.ts           # Client-side FHE operations
+│   │   ├── server.ts           # Server-side FHE operations
+│   │   ├── keys.ts             # Key management logic
+│   │   └── types.ts            # FHE type definitions
+│   └── utils/                  # Utility functions
+│       ├── security.ts         # Security utilities
+│       └── validation.ts       # Validation functions
 │
-public/
-└── ...                    # Static assets
+├── hooks/                      # Custom React Hooks
+│   ├── useFHE.ts               # Main FHE operations hook
+│   ├── useEncryption.ts        # Encryption/decryption hook
+│   └── useComputation.ts       # Computation hook
+│
+└── types/                      # TypeScript types
+    ├── fhe.ts                  # FHE-related types
+    └── api.ts                  # API type definitions
 ```
 
 ---
